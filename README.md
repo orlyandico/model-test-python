@@ -10,7 +10,7 @@ Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.c
 
 2. **Brittle evaluation.** Docker's harness used exact tool-sequence matching: if the model called the right tools in a slightly different (but valid) order, it failed. This produced false negatives on models that were actually doing the right thing. This tool adds a two-tier evaluation — fast brittle matching first, then an LLM-as-judge fallback (Claude Sonnet 4.5 via Bedrock) that evaluates semantic correctness of tool selection, sequencing, and parameters.
 
-3. **Too few agent rounds.** The original capped the agent loop at 5 rounds. Complex multi-step tasks (search, add multiple items, view cart, checkout) often need more iterations, especially for smaller models that take an exploratory approach. This tool gives models 10 rounds, reducing false failures from premature truncation.
+3. **Too few agent rounds.** The original capped the agent loop at 5 rounds.  Granted, the 5-round limit was an opinionated choice on the part of the original author. However, complex multi-step tasks (search, add multiple items, view cart, checkout) often need more iterations, especially for smaller models that take an exploratory approach. This tool gives models 10 rounds, reducing false failures from premature truncation.
 
 ## Top Results
 
@@ -26,7 +26,7 @@ F1 is calculated at the **individual tool-call level**, not the test-case level.
 | 6 | Qwen3 8B | Ollama | 0.909 | 9.22s |
 | 7 | Qwen3 1.7B | Ollama | 0.906 | 2.77s |
 | 8 | Qwen3-Coder-Next (Q3_K_XL) | llama.cpp | 0.901 | 1.77s |
-| 9 | GLM-4.7-flash | Vertex AI MaaS | 0.900 | 3.46s |
+| 9 | GLM-4.7-flash | Ollama | 0.900 | 3.46s |
 | 10 | Gemini 2.0 Flash | Vertex AI | 0.873 | 1.29s |
 | 11 | Gemini 2.5 Pro | Vertex AI | 0.867 | 4.51s |
 | 12 | Qwen3 4B | Ollama | 0.859 | 17.81s |

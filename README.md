@@ -1,6 +1,6 @@
 # Model Test - Python
 
-A tool-calling evaluation harness for LLMs, across local and cloud backends. Run 17 shopping-cart test cases against any model and get F1 scores, latency numbers, and per-test pass/fail breakdowns. A Python rewrite of Docker's [model-test](https://github.com/docker/model-test) tool (originally in Go). Tests models across local and cloud backends on a shopping cart scenario with 17 test cases across 4 difficulty levels (zero-tool, simple, medium, complex), measuring whether models correctly invoke tools or correctly refrain from calling tools when none are needed.
+A tool-calling evaluation harness for LLMs, across local and cloud backends. A Python rewrite of Docker's [model-test](https://github.com/docker/model-test) tool (originally in Go). Tests models across local and cloud backends on a shopping cart scenario with 17 test cases across 4 difficulty levels (zero-tool, simple, medium, complex),  and get F1 scores, latency numbers, and per-test pass/fail breakdowns.
 
 ## Top Results
 
@@ -26,6 +26,27 @@ F1 is calculated at the **individual tool-call level**, not the test-case level.
 | 16 | Qwen3 0.6B | Ollama | 0.804 | 2.44s |
 | 17 | Granite4 350M | Ollama | 0.754 | 0.57s |
 | 18 | FunctionGemma | Ollama | 0.716 | 1.07s |
+
+## Economics
+
+The best model on general benchmarks isn't necessarily the best choice for tool calling. The F1 spread between rank 1 and rank 7 is only 5.8 points, but the cost spread is enormous.
+
+| Model | F1 | Input $/MTok | Output $/MTok | Relative cost |
+|-------|----|-------------|--------------|---------------|
+| Claude Sonnet 4.5 | 0.964 | $3.00 | $15.00 | 1x (baseline) |
+| Claude Haiku 4.5 | 0.949 | $1.00 | $5.00 | 3x cheaper |
+| GLM-4.7 | 0.925 | $0.40 | $1.50 | 7–10x cheaper |
+| Amazon Nova 2 Lite | 0.920 | $0.33 | $2.75 | ~6–9x cheaper |
+| Gemini 2.0 Flash | 0.873 | $0.15 | $0.60 | 20–25x cheaper |
+| Qwen3 1.7B (self-hosted) | 0.906 | ~$0.05 | ~$0.61 | see below |
+
+**The takeaway:** For tool-calling workloads, you're paying 7–10x more for Sonnet 4.5 to gain 4 F1 points over GLM-4.7. That's a defensible trade-off if you need peak accuracy, but most agent pipelines don't. GLM-4.7 at $0.40/$1.50 per million tokens is the strongest cost/accuracy ratio among cloud models — it ranks 4th in F1 but costs a fraction of the Anthropic models above it. Nova 2 Lite is in a similar bracket at $0.33/$2.75, with the added advantage of being the fastest cloud model in the top 5 (0.84s average latency).
+
+**What about self-hosting?** We benchmarked Qwen3 1.7B (4-bit quantized) on an NVIDIA P40, roughly equivalent to a T4 in memory-bound workloads. Measured throughput: ~103 tokens/s decode, ~1,356 tokens/s prefill. On an AWS `g4dn.xlarge` (1x T4, $0.227/hr on a 3-year RI), that works out to ~$0.05/MTok input and ~$0.61/MTok output — *if the GPU is saturated 24/7*. That's the catch: reserved instances charge whether you use them or not. At 50% utilization those per-token costs double; at 10% they're 10x higher and suddenly more expensive than the API models above.
+
+For most tool-calling workloads, **serverless inference (pay-per-token) is the better default** unless you have sustained, predictable throughput that keeps the GPU busy. GLM-4.7 ($0.40/$1.50), Nova 2 Lite ($0.33/$2.75), Gemini 2.0 Flash ($0.15/$0.60), and Gemini 2.5 Flash ($0.30/$2.50 — not yet tested here but worth considering) all come in well under $3/MTok output with zero idle cost. Self-hosting only wins when you can guarantee high utilization — and at that point you'd also want vLLM or TensorRT-LLM with continuous batching to maximize throughput, not Ollama.
+
+The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 7 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
 
 
 ## Why This Exists
@@ -56,26 +77,6 @@ The exception was Haiku 4.5, which passed `complex_cart_management` in some runs
 - **All top models hit the same ceiling.** The 17th test isn't a flaw in the models — it's a deliberately ambiguous scenario that tests whether a model will act on an instruction even when its own interpretation suggests the action is unnecessary. Most current models won't.
 
 
-## Economics
-
-The best model on general benchmarks isn't necessarily the best choice for tool calling. The F1 spread between rank 1 and rank 7 is only 5.8 points, but the cost spread is enormous.
-
-| Model | F1 | Input $/MTok | Output $/MTok | Relative cost |
-|-------|----|-------------|--------------|---------------|
-| Claude Sonnet 4.5 | 0.964 | $3.00 | $15.00 | 1x (baseline) |
-| Claude Haiku 4.5 | 0.949 | $1.00 | $5.00 | 3x cheaper |
-| GLM-4.7 | 0.925 | $0.40 | $1.50 | 7–10x cheaper |
-| Amazon Nova 2 Lite | 0.920 | $0.33 | $2.75 | ~6–9x cheaper |
-| Gemini 2.0 Flash | 0.873 | $0.15 | $0.60 | 20–25x cheaper |
-| Qwen3 1.7B (self-hosted) | 0.906 | ~$0.05 | ~$0.61 | see below |
-
-**The takeaway:** For tool-calling workloads, you're paying 7–10x more for Sonnet 4.5 to gain 4 F1 points over GLM-4.7. That's a defensible trade-off if you need peak accuracy, but most agent pipelines don't. GLM-4.7 at $0.40/$1.50 per million tokens is the strongest cost/accuracy ratio among cloud models — it ranks 4th in F1 but costs a fraction of the Anthropic models above it. Nova 2 Lite is in a similar bracket at $0.33/$2.75, with the added advantage of being the fastest cloud model in the top 5 (0.84s average latency).
-
-**What about self-hosting?** We benchmarked Qwen3 1.7B (4-bit quantized) on an NVIDIA P40, roughly equivalent to a T4 in memory-bound workloads. Measured throughput: ~103 tokens/s decode, ~1,356 tokens/s prefill. On an AWS `g4dn.xlarge` (1x T4, $0.227/hr on a 3-year RI), that works out to ~$0.05/MTok input and ~$0.61/MTok output — *if the GPU is saturated 24/7*. That's the catch: reserved instances charge whether you use them or not. At 50% utilization those per-token costs double; at 10% they're 10x higher and suddenly more expensive than the API models above.
-
-For most tool-calling workloads, **serverless inference (pay-per-token) is the better default** unless you have sustained, predictable throughput that keeps the GPU busy. GLM-4.7 ($0.40/$1.50), Nova 2 Lite ($0.33/$2.75), Gemini 2.0 Flash ($0.15/$0.60), and Gemini 2.5 Flash ($0.30/$2.50 — not yet tested here but worth considering) all come in well under $3/MTok output with zero idle cost. Self-hosting only wins when you can guarantee high utilization — and at that point you'd also want vLLM or TensorRT-LLM with continuous batching to maximize throughput, not Ollama.
-
-The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 7 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
 
 ## Quick Start (No Installation)
 

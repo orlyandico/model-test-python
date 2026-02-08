@@ -71,14 +71,9 @@ The best model on general benchmarks isn't necessarily the best choice for tool 
 
 **The takeaway:** For tool-calling workloads, you're paying 7–10x more for Sonnet 4.5 to gain 4 F1 points over GLM-4.7. That's a defensible trade-off if you need peak accuracy, but most agent pipelines don't. GLM-4.7 at $0.40/$1.50 per million tokens is the strongest cost/accuracy ratio among cloud models — it ranks 4th in F1 but costs a fraction of the Anthropic models above it. Nova 2 Lite is in a similar bracket at $0.33/$2.75, with the added advantage of being the fastest cloud model in the top 5 (0.84s average latency).
 
-**Self-hosted cost breakdown:** We benchmarked Qwen3 1.7B (4-bit quantized) on an NVIDIA P40, which is roughly equivalent to a T4 in memory-bound workloads like this. Measured throughput: ~103 tokens/s decode, ~1,356 tokens/s prefill. On an AWS `g4dn.xlarge` (1x T4):
+**What about self-hosting?** We benchmarked Qwen3 1.7B (4-bit quantized) on an NVIDIA P40, roughly equivalent to a T4 in memory-bound workloads. Measured throughput: ~103 tokens/s decode, ~1,356 tokens/s prefill. On an AWS `g4dn.xlarge` (1x T4, $0.227/hr on a 3-year RI), that works out to ~$0.05/MTok input and ~$0.61/MTok output — *if the GPU is saturated 24/7*. That's the catch: reserved instances charge whether you use them or not. At 50% utilization those per-token costs double; at 10% they're 10x higher and suddenly more expensive than the API models above.
 
-| Pricing tier | $/hr | Amortized input $/MTok | Amortized output $/MTok |
-|---|---|---|---|
-| 1-year RI | $0.331 | ~$0.07 | ~$0.89 |
-| 3-year RI | $0.227 | ~$0.05 | ~$0.61 |
-
-At 3-year RI rates, self-hosted Qwen3 1.7B is ~2.5x cheaper on output than GLM-4.7 and ~4.5x cheaper than Nova 2 Lite — with only 2 F1 points less than either. These numbers are single-stream with Ollama; a production deployment with vLLM or TensorRT-LLM and continuous batching would push throughput significantly higher.
+For most tool-calling workloads, **serverless inference (pay-per-token) is the better default** unless you have sustained, predictable throughput that keeps the GPU busy. The API pricing from GLM-4.7, Nova 2 Lite, or Gemini 2.0 Flash already comes in well under $1/MTok output with zero idle cost. Self-hosting only wins when you can guarantee high utilization — and at that point you'd also want vLLM or TensorRT-LLM with continuous batching to maximize throughput, not Ollama.
 
 The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 7 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
 

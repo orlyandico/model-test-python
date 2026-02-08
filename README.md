@@ -2,19 +2,6 @@
 
 A tool-calling evaluation harness for LLMs, across local and cloud backends. Run 17 shopping-cart test cases against any model and get F1 scores, latency numbers, and per-test pass/fail breakdowns. A Python rewrite of Docker's [model-test](https://github.com/docker/model-test) tool (originally in Go). Tests models across local and cloud backends on a shopping cart scenario with 17 test cases across 4 difficulty levels (zero-tool, simple, medium, complex), measuring whether models correctly invoke tools or correctly refrain from calling tools when none are needed.
 
-
-## Why This Exists
-
-If you're building an agent that calls tools, you need to pick a model — but public benchmarks like [BFCL](https://gorilla.cs.berkeley.edu/leaderboard.html) are dominated by cloud API models. They won't tell you how a 1.7B local model would compare, or handle a multi-step agent loop where it needs to chain tool calls based on intermediate results.
-
-Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.com/blog/local-llm-tool-calling-a-practical-evaluation/) is an attempt to fill that gap: 21 local models tested across 3,570 cases with a Go harness. But it had three limitations that made it hard to use for real model selection:
-
-1. **Local only.** The original [docker/model-test](https://github.com/docker/model-test) only tested Ollama models. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
-
-2. **Brittle evaluation.** Docker's harness used exact tool-sequence matching: if the model called the right tools in a slightly different (but valid) order, it failed. This produced false negatives on models that were actually doing the right thing. This tool adds a two-tier evaluation — fast brittle matching first, then an LLM-as-judge fallback (Claude Sonnet 4.5 via Bedrock) that evaluates semantic correctness of tool selection, sequencing, and parameters.
-
-3. **Too few agent rounds.** The original capped the agent loop at 5 rounds.  Granted, the 5-round limit was an opinionated choice on the part of the original author. However, complex multi-step tasks (search, add multiple items, view cart, checkout) often need more iterations, especially for smaller models that take an exploratory approach. This tool gives models 10 rounds, reducing false failures from premature truncation.
-
 ## Top Results
 
 F1 is calculated at the **individual tool-call level**, not the test-case level. A model that misses 1 tool call in a 3-tool test loses less F1 than one that misses 1 call in a 1-tool test. Extra spurious calls reduce precision.
@@ -39,6 +26,21 @@ F1 is calculated at the **individual tool-call level**, not the test-case level.
 | 16 | Qwen3 0.6B | Ollama | 0.804 | 2.44s |
 | 17 | Granite4 350M | Ollama | 0.754 | 0.57s |
 | 18 | FunctionGemma | Ollama | 0.716 | 1.07s |
+
+
+## Why This Exists
+
+If you're building an agent that calls tools, you need to pick a model — but public benchmarks like [BFCL](https://gorilla.cs.berkeley.edu/leaderboard.html) are dominated by cloud API models. They won't tell you how a 1.7B local model would compare, or handle a multi-step agent loop where it needs to chain tool calls based on intermediate results.
+
+Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.com/blog/local-llm-tool-calling-a-practical-evaluation/) is an attempt to fill that gap: 21 local models tested across 3,570 cases with a Go harness. But it had three limitations that made it hard to use for real model selection:
+
+1. **Local only.** The original [docker/model-test](https://github.com/docker/model-test) only tested Ollama models. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
+
+2. **Brittle evaluation.** Docker's harness used exact tool-sequence matching: if the model called the right tools in a slightly different (but valid) order, it failed. This produced false negatives on models that were actually doing the right thing. This tool adds a two-tier evaluation — fast brittle matching first, then an LLM-as-judge fallback (Claude Sonnet 4.5 via Bedrock) that evaluates semantic correctness of tool selection, sequencing, and parameters.
+
+3. **Too few agent rounds.** The original capped the agent loop at 5 rounds.  Granted, the 5-round limit was an opinionated choice on the part of the original author. However, complex multi-step tasks (search, add multiple items, view cart, checkout) often need more iterations, especially for smaller models that take an exploratory approach. This tool gives models 10 rounds, reducing false failures from premature truncation.
+
+## Analysis
 
 **The stumbling block: `complex_cart_management`.** The top 5 models all passed 16 out of 17 tests, and four of them failed the same one. The prompt asks: *"show me what's in my cart, remove any duplicate items, and add one Samsung Galaxy S24."* When the model calls `view_cart`, it gets back `iPhone, quantity: 2`. Every model that failed this test looked at that result, concluded there were no duplicates — just "multiple units of the same product, not a duplicate entry" as one model put it — and skipped the `remove_from_cart` call entirely. The models distinguish between duplicate line items and a quantity of 2, and since they see a single entry, they decide no removal is needed. The user asked them to remove duplicates; the quantity of 2 *is* the duplicate; the models don't make that connection.
 

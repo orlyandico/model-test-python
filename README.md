@@ -1,10 +1,13 @@
 # Model Test - Python
 
-A tool-calling evaluation harness for LLMs, across local and cloud backends. Run 17 shopping-cart test cases against any model and get F1 scores, latency numbers, and per-test pass/fail breakdowns.
+A tool-calling evaluation harness for LLMs, across local and cloud backends. Run 17 shopping-cart test cases against any model and get F1 scores, latency numbers, and per-test pass/fail breakdowns. A Python rewrite of Docker's [model-test](https://github.com/docker/model-test) tool (originally in Go). Tests models across local and cloud backends on a shopping cart scenario with 17 test cases across 4 difficulty levels (zero-tool, simple, medium, complex), measuring whether models correctly invoke tools or correctly refrain from calling tools when none are needed.
+
 
 ## Why This Exists
 
-Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.com/blog/local-llm-tool-calling-a-practical-evaluation/) was a good start: 21 local models tested across 3,570 cases with a Go harness. But it had three limitations that made it hard to use for real model selection:
+If you're building an agent that calls tools, you need to pick a model — but public benchmarks like [BFCL](https://gorilla.cs.berkeley.edu/leaderboard.html) are dominated by cloud API models. They won't tell you how a 1.7B local model would compare, or handle a multi-step agent loop where it needs to chain tool calls based on intermediate results.
+
+Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.com/blog/local-llm-tool-calling-a-practical-evaluation/) is an attempt to fill that gap: 21 local models tested across 3,570 cases with a Go harness. But it had three limitations that made it hard to use for real model selection:
 
 1. **Local only.** The original [docker/model-test](https://github.com/docker/model-test) only tested Ollama models. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
 
@@ -47,11 +50,9 @@ The exception was Haiku 4.5, which passed `complex_cart_management` in some runs
 - **Haiku 4.5 is the efficiency sweet spot:** 1.5 F1 points behind Sonnet 4.5 at nearly half the latency. For high-volume tool-calling agents, this is the trade-off to beat.
 - **Nova 2 Lite is the speed play:** 3.4x faster than Sonnet 4.5 with F1 still above 0.91. If your use case is latency-sensitive and can tolerate slightly less precise tool selection, this is compelling.
 - **Qwen3 1.7B punches above its weight:** A 1.7B parameter local model at F1 0.906 — ahead of Gemini 2.5 Pro (0.867) and within striking distance of cloud models, at the cost of higher latency on consumer hardware.
+- **FunctionGemma is fast but single-step only.** Despite being tiny and low-latency, it lands last because it can only handle single-tool test cases. On any multi-step test, it executes the first tool call and then stops — it never chains a second call based on the result. If your use case is strictly single-turn function dispatch, it works; for anything requiring an agent loop, it doesn't.
 - **All top models hit the same ceiling.** The 17th test isn't a flaw in the models — it's a deliberately ambiguous scenario that tests whether a model will act on an instruction even when its own interpretation suggests the action is unnecessary. Most current models won't.
 
-## Overview
-
-Python rewrite of Docker's [model-test](https://github.com/docker/model-test) tool (originally in Go). Tests models across local and cloud backends on a shopping cart scenario with 17 test cases across 4 difficulty levels (zero-tool, simple, medium, complex), measuring whether models correctly invoke tools or correctly refrain from calling tools when none are needed.
 
 ## Quick Start (No Installation)
 

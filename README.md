@@ -48,7 +48,7 @@ The best model on general benchmarks isn't necessarily the best choice for tool 
 
 For most tool-calling workloads, **serverless inference (pay-per-token) is the better default** unless you have sustained, predictable throughput that keeps the GPU busy. Gemini 2.5 Flash ($0.30/$2.50), GLM-4.7 ($0.40/$1.50), Nova 2 Lite ($0.33/$2.75), and Gemini 2.0 Flash ($0.15/$0.60) all come in well under $3/MTok output with zero idle cost. Self-hosting only wins when you can guarantee high utilization — and at that point you'd also want vLLM or TensorRT-LLM with continuous batching to maximize throughput, not Ollama.
 
-The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 7 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
+The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 8 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
 
 
 ## Why This Exists
@@ -57,7 +57,7 @@ If you're building an agent that calls tools, you need to pick a model — but p
 
 Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.com/blog/local-llm-tool-calling-a-practical-evaluation/) is an attempt to fill that gap: 21 local models tested across 3,570 cases with a Go harness. But it had three limitations that made it hard to use for real model selection:
 
-1. **Local only.** The original [docker/model-test](https://github.com/docker/model-test) only tested Ollama models. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
+1. **Local only.** The original [docker/model-test](https://github.com/docker/model-test) only tested (OpenAI-endpoint) models, primarily Ollama and OpenAI as a baseline. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
 
 2. **Brittle evaluation.** Docker's harness used exact tool-sequence matching: if the model called the right tools in a slightly different (but valid) order, it failed. This produced false negatives on models that were actually doing the right thing. This tool adds a two-tier evaluation — fast brittle matching first, then an LLM-as-judge fallback (Claude Sonnet 4.5 via Bedrock) that evaluates semantic correctness of tool selection, sequencing, and parameters.
 

@@ -56,6 +56,32 @@ The exception was Haiku 4.5, which passed `complex_cart_management` in some runs
 - **All top models hit the same ceiling.** The 17th test isn't a flaw in the models — it's a deliberately ambiguous scenario that tests whether a model will act on an instruction even when its own interpretation suggests the action is unnecessary. Most current models won't.
 
 
+## Economics
+
+The best model on general benchmarks isn't necessarily the best choice for tool calling. The F1 spread between rank 1 and rank 7 is only 5.8 points, but the cost spread is enormous.
+
+| Model | F1 | Input $/MTok | Output $/MTok | Relative cost |
+|-------|----|-------------|--------------|---------------|
+| Claude Sonnet 4.5 | 0.964 | $3.00 | $15.00 | 1x (baseline) |
+| Claude Haiku 4.5 | 0.949 | $1.00 | $5.00 | 3x cheaper |
+| GLM-4.7 | 0.925 | $0.40 | $1.50 | 7–10x cheaper |
+| Amazon Nova 2 Lite | 0.920 | $0.33 | $2.75 | ~6–9x cheaper |
+| Gemini 2.0 Flash | 0.873 | $0.15 | $0.60 | 20–25x cheaper |
+| Qwen3 1.7B (self-hosted) | 0.906 | ~$0.05 | ~$0.61 | see below |
+
+**The takeaway:** For tool-calling workloads, you're paying 7–10x more for Sonnet 4.5 to gain 4 F1 points over GLM-4.7. That's a defensible trade-off if you need peak accuracy, but most agent pipelines don't. GLM-4.7 at $0.40/$1.50 per million tokens is the strongest cost/accuracy ratio among cloud models — it ranks 4th in F1 but costs a fraction of the Anthropic models above it. Nova 2 Lite is in a similar bracket at $0.33/$2.75, with the added advantage of being the fastest cloud model in the top 5 (0.84s average latency).
+
+**Self-hosted cost breakdown:** We benchmarked Qwen3 1.7B (4-bit quantized) on an NVIDIA P40, which is roughly equivalent to a T4 in memory-bound workloads like this. Measured throughput: ~103 tokens/s decode, ~1,356 tokens/s prefill. On an AWS `g4dn.xlarge` (1x T4):
+
+| Pricing tier | $/hr | Amortized input $/MTok | Amortized output $/MTok |
+|---|---|---|---|
+| 1-year RI | $0.331 | ~$0.07 | ~$0.89 |
+| 3-year RI | $0.227 | ~$0.05 | ~$0.61 |
+
+At 3-year RI rates, self-hosted Qwen3 1.7B is ~2.5x cheaper on output than GLM-4.7 and ~4.5x cheaper than Nova 2 Lite — with only 2 F1 points less than either. These numbers are single-stream with Ollama; a production deployment with vLLM or TensorRT-LLM and continuous batching would push throughput significantly higher.
+
+The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 7 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
+
 ## Quick Start (No Installation)
 
 ```bash

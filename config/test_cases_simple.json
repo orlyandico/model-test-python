@@ -1,0 +1,177 @@
+[
+  {
+    "name": "zero_greeting",
+    "prompt": "Hello, how are you today?",
+    "expected_tools_variants": [
+      {
+        "name": "no_tools",
+        "description": "No tools should be called for greetings",
+        "tools": []
+      }
+    ]
+  },
+  {
+    "name": "zero_weather_question",
+    "prompt": "What's the weather like today?",
+    "expected_tools_variants": [
+      {
+        "name": "no_tools",
+        "description": "No tools should be called for weather questions",
+        "tools": []
+      }
+    ]
+  },
+  {
+    "name": "zero_general_question",
+    "prompt": "Can you tell me about artificial intelligence?",
+    "expected_tools_variants": [
+      {
+        "name": "no_tools",
+        "description": "No tools should be called for general questions",
+        "tools": []
+      }
+    ]
+  },
+  {
+    "name": "zero_thank_you",
+    "prompt": "Thank you for your help!",
+    "expected_tools_variants": [
+      {
+        "name": "no_tools",
+        "description": "No tools should be called for thank you messages",
+        "tools": []
+      }
+    ]
+  },
+  {
+    "name": "zero_capabilities",
+    "prompt": "What can you help me with?",
+    "expected_tools_variants": [
+      {
+        "name": "no_tools",
+        "description": "No tools should be called for capability questions",
+        "tools": []
+      }
+    ]
+  },
+  {
+    "name": "simple_search_electronics",
+    "prompt": "Search for electronics",
+    "expected_tools_variants": [
+      {
+        "name": "search_by_category",
+        "description": "Search using category parameter",
+        "tools": [
+          {
+            "name": "search_products",
+            "arguments": {
+              "category": "electronics"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "simple_add_iphone",
+    "prompt": "Add iPhone to cart",
+    "expected_tools_variants": [
+      {
+        "name": "direct_add",
+        "description": "Direct add to cart without searching",
+        "tools": [
+          {
+            "name": "add_to_cart",
+            "arguments": {
+              "product_name": "iPhone"
+            }
+          }
+        ]
+      },
+      {
+        "name": "search_then_add",
+        "description": "Search for iPhone first, then add to cart",
+        "tools": [
+          {
+            "name": "search_products",
+            "arguments": {
+              "query": "iPhone"
+            }
+          },
+          {
+            "name": "add_to_cart",
+            "arguments": {
+              "product_name": "iPhone 15"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "simple_view_cart",
+    "prompt": "Show me my cart",
+    "expected_tools_variants": [
+      {
+        "name": "view_cart",
+        "description": "View cart contents",
+        "tools": [
+          {
+            "name": "view_cart",
+            "arguments": {}
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "simple_remove_product",
+    "prompt": "Remove iPhone 15 from my cart",
+    "initial_cart_state": {
+      "items": [
+        {
+          "product_name": "iPhone 15",
+          "quantity": 1
+        }
+      ]
+    },
+    "expected_tools_variants": [
+      {
+        "name": "direct_remove",
+        "description": "Direct remove from cart",
+        "tools": [
+          {
+            "name": "remove_from_cart",
+            "arguments": {
+              "product_name": "iPhone 15"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "simple_checkout",
+    "prompt": "Proceed to checkout",
+    "initial_cart_state": {
+      "items": [
+        {
+          "product_name": "iPhone 15",
+          "quantity": 1
+        }
+      ]
+    },
+    "expected_tools_variants": [
+      {
+        "name": "direct_checkout",
+        "description": "Direct checkout",
+        "tools": [
+          {
+            "name": "checkout",
+            "arguments": {}
+          }
+        ]
+      }
+    ]
+  }
+]

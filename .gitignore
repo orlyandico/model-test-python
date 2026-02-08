@@ -1,0 +1,17 @@
+results/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Credentials and secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+service-account*.json

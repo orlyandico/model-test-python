@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "WebSearch",
+      "Bash(gh auth status:*)"
+    ]
+  }
+}

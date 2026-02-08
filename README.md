@@ -13,38 +13,40 @@ F1 is calculated at the **individual tool-call level**, not the test-case level.
 | 3 | Claude Haiku 4.5 | Bedrock | 0.949 | 1.67s |
 | 4 | GLM-4.7 | Vertex AI MaaS | 0.925 | 1.39s |
 | 5 | Amazon Nova 2 Lite | Bedrock | 0.920 | 0.84s |
-| 6 | Qwen3 8B | Ollama | 0.909 | 9.22s |
-| 7 | Qwen3 1.7B | Ollama | 0.906 | 2.77s |
-| 8 | Qwen3-Coder-Next (Q3_K_XL) | llama.cpp | 0.901 | 1.77s |
-| 9 | GLM-4.7-flash | Ollama | 0.900 | 3.46s |
-| 10 | Gemini 2.0 Flash | Vertex AI | 0.873 | 1.29s |
-| 11 | Gemini 2.5 Pro | Vertex AI | 0.867 | 4.51s |
-| 12 | Qwen3 4B | Ollama | 0.859 | 17.81s |
-| 13 | Kimi K2 Thinking | Vertex AI MaaS | 0.856 | 1.19s |
-| 14 | Nemotron-3-nano | Ollama | 0.852 | 15.22s |
-| 15 | Amazon Nova Micro | Bedrock | 0.832 | 0.82s |
-| 16 | Qwen3 0.6B | Ollama | 0.804 | 2.44s |
-| 17 | Granite4 350M | Ollama | 0.754 | 0.57s |
-| 18 | FunctionGemma | Ollama | 0.716 | 1.07s |
+| 6 | Gemini 2.5 Flash | Vertex AI | 0.915 | 2.19s |
+| 7 | Qwen3 8B | Ollama | 0.909 | 9.22s |
+| 8 | Qwen3 1.7B | Ollama | 0.906 | 2.77s |
+| 9 | Qwen3-Coder-Next (Q3_K_XL) | llama.cpp | 0.901 | 1.77s |
+| 10 | GLM-4.7-flash | Ollama | 0.900 | 3.46s |
+| 11 | Gemini 2.0 Flash | Vertex AI | 0.873 | 1.29s |
+| 12 | Gemini 2.5 Pro | Vertex AI | 0.867 | 4.51s |
+| 13 | Qwen3 4B | Ollama | 0.859 | 17.81s |
+| 14 | Kimi K2 Thinking | Vertex AI MaaS | 0.856 | 1.19s |
+| 15 | Nemotron-3-nano | Ollama | 0.852 | 15.22s |
+| 16 | Amazon Nova Micro | Bedrock | 0.832 | 0.82s |
+| 17 | Qwen3 0.6B | Ollama | 0.804 | 2.44s |
+| 18 | Granite4 350M | Ollama | 0.754 | 0.57s |
+| 19 | FunctionGemma | Ollama | 0.716 | 1.07s |
 
 ## Economics
 
-The best model on general benchmarks isn't necessarily the best choice for tool calling. The F1 spread between rank 1 and rank 7 is only 5.8 points, but the cost spread is enormous.
+The best model on general benchmarks isn't necessarily the best choice for tool calling. The F1 spread between rank 1 and rank 8 is only 5.8 points, but the cost spread is enormous.
 
 | Model | F1 | Input $/MTok | Output $/MTok | Relative cost |
 |-------|----|-------------|--------------|---------------|
 | Claude Sonnet 4.5 | 0.964 | $3.00 | $15.00 | 1x (baseline) |
 | Claude Haiku 4.5 | 0.949 | $1.00 | $5.00 | 3x cheaper |
+| Gemini 2.5 Flash | 0.915 | $0.30 | $2.50 | 6–10x cheaper |
 | GLM-4.7 | 0.925 | $0.40 | $1.50 | 7–10x cheaper |
 | Amazon Nova 2 Lite | 0.920 | $0.33 | $2.75 | ~6–9x cheaper |
 | Gemini 2.0 Flash | 0.873 | $0.15 | $0.60 | 20–25x cheaper |
 | Qwen3 1.7B (self-hosted) | 0.906 | ~$0.05 | ~$0.61 | see below |
 
-**The takeaway:** For tool-calling workloads, you're paying 7–10x more for Sonnet 4.5 to gain 4 F1 points over GLM-4.7. That's a defensible trade-off if you need peak accuracy, but most agent pipelines don't. GLM-4.7 at $0.40/$1.50 per million tokens is the strongest cost/accuracy ratio among cloud models — it ranks 4th in F1 but costs a fraction of the Anthropic models above it. Nova 2 Lite is in a similar bracket at $0.33/$2.75, with the added advantage of being the fastest cloud model in the top 5 (0.84s average latency).
+**The takeaway:** For tool-calling workloads, you're paying 7–10x more for Sonnet 4.5 to gain 4 F1 points over GLM-4.7. That's a defensible trade-off if you need peak accuracy, but most agent pipelines don't. GLM-4.7 at $0.40/$1.50 per million tokens is the strongest cost/accuracy ratio among cloud models — it ranks 4th in F1 but costs a fraction of the Anthropic models above it. Gemini 2.5 Flash ($0.30/$2.50) is close behind at F1 0.915 and even cheaper on input. Nova 2 Lite ($0.33/$2.75) adds the fastest latency of any high-F1 cloud model (0.84s average).
 
 **What about self-hosting?** We benchmarked Qwen3 1.7B (4-bit quantized) on an NVIDIA P40, roughly equivalent to a T4 in memory-bound workloads. Measured throughput: ~103 tokens/s decode, ~1,356 tokens/s prefill. On an AWS `g4dn.xlarge` (1x T4, $0.227/hr on a 3-year RI), that works out to ~$0.05/MTok input and ~$0.61/MTok output — *if the GPU is saturated 24/7*. That's the catch: reserved instances charge whether you use them or not. At 50% utilization those per-token costs double; at 10% they're 10x higher and suddenly more expensive than the API models above.
 
-For most tool-calling workloads, **serverless inference (pay-per-token) is the better default** unless you have sustained, predictable throughput that keeps the GPU busy. GLM-4.7 ($0.40/$1.50), Nova 2 Lite ($0.33/$2.75), Gemini 2.0 Flash ($0.15/$0.60), and Gemini 2.5 Flash ($0.30/$2.50 — not yet tested here but worth considering) all come in well under $3/MTok output with zero idle cost. Self-hosting only wins when you can guarantee high utilization — and at that point you'd also want vLLM or TensorRT-LLM with continuous batching to maximize throughput, not Ollama.
+For most tool-calling workloads, **serverless inference (pay-per-token) is the better default** unless you have sustained, predictable throughput that keeps the GPU busy. Gemini 2.5 Flash ($0.30/$2.50), GLM-4.7 ($0.40/$1.50), Nova 2 Lite ($0.33/$2.75), and Gemini 2.0 Flash ($0.15/$0.60) all come in well under $3/MTok output with zero idle cost. Self-hosting only wins when you can guarantee high utilization — and at that point you'd also want vLLM or TensorRT-LLM with continuous batching to maximize throughput, not Ollama.
 
 The bottom line: for tool calling, the most capable model is rarely the most cost-effective. The F1 difference between rank 1 and rank 7 is under 6 points, but the cost difference is orders of magnitude. Save the expensive frontier models for tasks that actually need their reasoning capabilities.
 
@@ -383,6 +385,21 @@ python3 analyse_batch.py results/ --format json -o analysis.json
 ## Output
 
 Results saved to `results/agent_test_results_<model>_<timestamp>.json`
+
+## Conclusion: So Which Model Should You Pick?
+
+The top ~8 models (F1 > 0.90) all clear the bar for tool calling. Their failure modes aren't about inability — they're about style. Sonnet 4.5/4 and GLM-4.7 interpret the ambiguous duplicate test too literally. Haiku 4.5 and Gemini 2.5 Flash are over-cautious, asking for confirmation instead of just chaining the next tool call. In a real application with a human in the loop, that caution might actually be preferable.
+
+Once you accept that the top tier is functionally equivalent for tool calling, the real selection criteria become:
+
+- **Cost.** The 10–25x price difference between Sonnet 4.5 and GLM-4.7 or Gemini 2.5 Flash is the headline. See the [Economics](#economics) section.
+- **Latency.** Matters for user-facing agents. Nova 2 Lite (0.84s) and GLM-4.7 (1.39s) are meaningfully faster than Sonnet 4.5 (2.89s). For background or async agents, irrelevant.
+- **Ecosystem.** Already on AWS? Bedrock models are one API call away with IAM auth. Already on GCP? Vertex AI and Model Garden fit natively into your infra, logging, and billing. This operational convenience often outweighs small F1 differences.
+- **Broader capabilities.** If your agent needs tool calling *plus* strong reasoning or coding in the same workflow, the Anthropic models have a wider capability moat even though tool calling alone is a wash.
+- **Vendor independence.** GLM-4.7 and Qwen3 are open-weight — you can move them between providers or self-host. That optionality has value if lock-in is a concern.
+- **Reliability at scale.** Single-run F1 doesn't capture rate limits, throttling, or uptime. A model that's 2 F1 points worse but never 429s on you might be the better production choice.
+
+For most tool-calling pipelines, F1 > 0.90 means the model picks the right tools in roughly 9 out of 10 multi-step scenarios. The remaining failures are edge cases you'd handle with retries or fallback logic anyway. Once you're above that threshold, optimizing for cost, latency, and operational simplicity beats chasing the last 5 F1 points.
 
 ## References
 

@@ -57,7 +57,7 @@ If you're building an agent that calls tools, you need to pick a model — but p
 
 Docker's ["Local LLM Tool Calling: A Practical Evaluation"](https://www.docker.com/blog/local-llm-tool-calling-a-practical-evaluation/) is an attempt to fill that gap: 21 local models tested across 3,570 cases with a Go harness. But it had three limitations that made it hard to use for real model selection:
 
-1. **Local only.** The original [docker/model-test](https://github.com/docker/model-test) only tested (OpenAI-endpoint) models, primarily Ollama and OpenAI as a baseline. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
+1. **Local and OpenAI compatible only.** The original [docker/model-test](https://github.com/docker/model-test) only tested (OpenAI-endpoint) models, primarily Ollama and OpenAI as a baseline. If you wanted to compare a local Qwen3 against Claude or Nova on the same test suite, you couldn't. This tool adds AWS Bedrock, Google Vertex AI, and Vertex AI Model Garden backends so you can run the same 17 tests against local and cloud models side by side.
 
 2. **Brittle evaluation.** Docker's harness used exact tool-sequence matching: if the model called the right tools in a slightly different (but valid) order, it failed. This produced false negatives on models that were actually doing the right thing. This tool adds a two-tier evaluation — fast brittle matching first, then an LLM-as-judge fallback (Claude Sonnet 4.5 via Bedrock) that evaluates semantic correctness of tool selection, sequencing, and parameters.
 

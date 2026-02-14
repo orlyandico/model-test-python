@@ -220,11 +220,10 @@ class BedrockClient:
                 i += 1
             elif role == "assistant":
                 bedrock_content = []
-                # Check for text content
-                if content:
-                    bedrock_content.append({"text": content})
-                # Check for tool calls
+                # Check for tool calls first
                 tool_calls = getattr(msg, "tool_calls", None) if not isinstance(msg, dict) else msg.get("tool_calls")
+                
+                # If there are tool calls, only include them (no text)
                 if tool_calls:
                     for tc in tool_calls:
                         bedrock_content.append({
@@ -234,7 +233,13 @@ class BedrockClient:
                                 "input": json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
                             }
                         })
-                bedrock_messages.append({"role": "assistant", "content": bedrock_content})
+                # Otherwise, include text content
+                elif content:
+                    bedrock_content.append({"text": content})
+                
+                # Only add message if there's content
+                if bedrock_content:
+                    bedrock_messages.append({"role": "assistant", "content": bedrock_content})
                 i += 1
             elif role == "tool":
                 # Accumulate all consecutive tool results into one user message
@@ -269,6 +274,7 @@ class BedrockClient:
             else:
                 i += 1
 
+        
         return system_prompts, bedrock_messages
     
     def create_completion(self, messages):

@@ -18,15 +18,17 @@ F1 is calculated at the **individual tool-call level**, not the test-case level.
 | 8 | Qwen3 1.7B | Ollama | 0.906 | 2.77s |
 | 9 | Qwen3-Coder-Next (Q3_K_XL) | llama.cpp | 0.901 | 1.77s |
 | 10 | GLM-4.7-flash | Ollama | 0.900 | 3.46s |
-| 11 | Gemini 2.0 Flash | Vertex AI | 0.873 | 1.29s |
-| 12 | Gemini 2.5 Pro | Vertex AI | 0.867 | 4.51s |
-| 13 | Qwen3 4B | Ollama | 0.859 | 17.81s |
-| 14 | Kimi K2 Thinking | Vertex AI MaaS | 0.856 | 1.19s |
-| 15 | Nemotron-3-nano | Ollama | 0.852 | 15.22s |
-| 16 | Amazon Nova Micro | Bedrock | 0.832 | 0.82s |
-| 17 | Qwen3 0.6B | Ollama | 0.804 | 2.44s |
-| 18 | Granite4 350M | Ollama | 0.754 | 0.57s |
-| 19 | FunctionGemma | Ollama | 0.716 | 1.07s |
+| 11 | Moonshot Kimi K2.5 | Bedrock | 0.874 | 1.15s |
+| 12 | Gemini 2.0 Flash | Vertex AI | 0.873 | 1.29s |
+| 13 | Gemini 2.5 Pro | Vertex AI | 0.867 | 4.51s |
+| 14 | Qwen3 4B | Ollama | 0.859 | 17.81s |
+| 15 | Kimi K2 Thinking | Vertex AI MaaS | 0.856 | 1.19s |
+| 16 | Nemotron-3-nano | Ollama | 0.852 | 15.22s |
+| 17 | Amazon Nova Micro | Bedrock | 0.832 | 0.82s |
+| 18 | Qwen3 0.6B | Ollama | 0.804 | 2.44s |
+| 19 | DeepSeek V3.2 | Bedrock | 0.782 | 5.27s |
+| 20 | Granite4 350M | Ollama | 0.754 | 0.57s |
+| 21 | FunctionGemma | Ollama | 0.716 | 1.07s |
 
 ## Economics
 
@@ -177,6 +179,14 @@ python3 run.py --model "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
 python3 run.py --model "bedrock/global.amazon.nova-2-lite-v1:0"
 python3 run.py --model "bedrock/us.amazon.nova-micro-v1:0"
 ```
+
+**Known Issues (as of Feb 14, 2026):**
+
+The following models are available in Bedrock but fail tool calling tests with validation errors from the model itself:
+- `bedrock/zai.glm-4.7` — Returns "Failed to deserialize the JSON body" errors when processing tool results
+- `bedrock/zai.glm-4.7-flash` — Same issue as above
+
+These models appear to not fully support the Bedrock Converse API's tool calling format. The same GLM-4.7 model works correctly via Vertex AI Model Garden MaaS (`vertex-maas/zai-org/glm-4.7-maas`) and Ollama (`ollama/glm-4.7-flash`), suggesting the issue is specific to the Bedrock implementation.
 
 ### Google Vertex AI (cloud)
 
